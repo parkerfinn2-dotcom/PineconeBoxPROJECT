@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear LocalStorage</title>
+</head>
+<body>
+    <h1>清除 localStorage</h1>
+    <p>点击下面的按钮清除登录状态，然后刷新页面查看登录页面。</p>
+    <button onclick="clearStorage()">清除登录状态</button>
+    <p id="status"></p>
+
+    <script>
+        function clearStorage() {
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('username');
+            document.getElementById('status').innerHTML = 'LocalStorage 已清除！<br>isLoggedIn: ' + localStorage.getItem('isLoggedIn') + '<br>username: ' + localStorage.getItem('username');
+        }
+    </script>
+</body>
+</html>
