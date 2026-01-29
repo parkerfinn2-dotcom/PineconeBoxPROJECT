@@ -6,6 +6,7 @@ const Register = () => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [email, setEmail] = useState('')
   const [isVisible, setIsVisible] = useState(false)
   const [isRegistered, setIsRegistered] = useState(false)
   const [error, setError] = useState('')
@@ -37,9 +38,9 @@ const Register = () => {
     }
     
     try {
-      console.log('开始注册:', { username, password })
+      console.log('开始注册:', { username, password, email })
       // 使用API服务注册
-      const response = await authApi.register(username, password)
+      const response = await authApi.register(username, password, email)
       console.log('注册成功:', response)
       
       setError('')
@@ -119,6 +120,29 @@ const Register = () => {
                 onChange={(e) => setUsername(e.target.value)} 
                 placeholder="请输入用户名" 
                 required
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '15px',
+                  border: '2px solid var(--primary-color)',
+                  fontSize: '16px',
+                  fontFamily: 'inherit',
+                  backgroundColor: 'var(--background-color)',
+                  color: 'var(--text-color)',
+                  transition: 'all 0.3s ease'
+                }}
+                onFocus={(e) => e.target.style.boxShadow = '0 0 0 3px rgba(168, 230, 207, 0.3)'} 
+                onBlur={(e) => e.target.style.boxShadow = 'none'}
+              />
+            </div>
+            
+            <div style={{ textAlign: 'left' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--text-color)' }}>邮箱（可选）</label>
+              <input 
+                type="email" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                placeholder="请输入邮箱（选填）" 
                 style={{
                   width: '100%',
                   padding: '12px',

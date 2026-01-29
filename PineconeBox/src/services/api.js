@@ -9,6 +9,12 @@ const getToken = () => {
 
 // 通用请求函数
 const request = async (endpoint, options = {}) => {
+  console.log('发送请求:', {
+    endpoint: `${API_BASE_URL}${endpoint}`,
+    method: options.method || 'GET',
+    hasToken: !!getToken()
+  });
+  
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
@@ -18,29 +24,46 @@ const request = async (endpoint, options = {}) => {
   const token = getToken();
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+    console.log('添加Authorization头:', `Bearer ${token.substring(0, 20)}...`);
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
 
-  // 检查响应状态
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `请求失败: ${response.status}`);
+    console.log('请求响应:', {
+      status: response.status,
+      statusText: response.statusText
+    });
+
+    // 检查响应状态
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('请求失败:', {
+        status: response.status,
+        message: errorData.message || `请求失败: ${response.status}`
+      });
+      throw new Error(errorData.message || `请求失败: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('请求成功，返回数据:', data);
+    return data;
+  } catch (error) {
+    console.error('请求出错:', error);
+    throw error;
   }
-
-  return response.json();
 };
 
 // 用户认证相关API
 export const authApi = {
   // 注册
-  register: async (username, password) => {
+  register: async (username, password, email) => {
     return request('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, password, email }),
     });
   },
 
@@ -49,6 +72,30 @@ export const authApi = {
     return request('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ username, password }),
+    });
+  },
+
+  // 邮箱登录
+  loginWithEmail: async (email, password) => {
+    return request('/auth/login/email', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  },
+
+  // 邮箱验证
+  verifyEmail: async (email, code) => {
+    return request('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ email, code }),
+    });
+  },
+
+  // 重新发送验证码
+  resendVerification: async (email) => {
+    return request('/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
     });
   },
 };

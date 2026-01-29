@@ -9,6 +9,10 @@ db.serialize(() => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
+      email TEXT UNIQUE,
+      email_verified BOOLEAN DEFAULT FALSE,
+      verification_code TEXT,
+      verification_expires TIMESTAMP,
       pinecone_count INTEGER DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

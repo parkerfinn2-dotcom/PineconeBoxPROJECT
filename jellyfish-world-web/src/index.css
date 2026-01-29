@@ -1,0 +1,392 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #0a1929;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100vw;
+  min-height: 100vh;
+}
+
+.app {
+  width: 100%;
+  min-height: 100vh;
+  position: relative;
+  background: linear-gradient(180deg, #0a1929 0%, #1a3a5f 50%, #0a1929 100%);
+  overflow: hidden;
+}
+
+.header {
+  text-align: center;
+  padding: 2rem 0;
+  position: relative;
+  z-index: 10;
+}
+
+.header h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+.header p {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.jellyfish-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem;
+  position: relative;
+  z-index: 5;
+}
+
+.jellyfish-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  width: 300px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.jellyfish-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.jellyfish-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.jellyfish-card:hover::before {
+  left: 100%;
+}
+
+.jellyfish-visual {
+  width: 100%;
+  height: 200px;
+  border-radius: 0.8rem;
+  margin-bottom: 1rem;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.jellyfish-shape {
+  width: 120px;
+  height: 150px;
+  border-radius: 60px 60px 0 0;
+  position: relative;
+  animation: float 3s ease-in-out infinite;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+.jellyfish-shape::after {
+  content: '';
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 40px;
+  background: inherit;
+  border-radius: 0 0 40px 40px;
+  opacity: 0.8;
+}
+
+.jellyfish-tentacles {
+  position: absolute;
+  bottom: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 60px;
+}
+
+.tentacle {
+  position: absolute;
+  width: 2px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.6);
+  animation: wave 2s ease-in-out infinite;
+}
+
+.tentacle:nth-child(1) {
+  left: 20%;
+  animation-delay: 0s;
+}
+
+.tentacle:nth-child(2) {
+  left: 35%;
+  animation-delay: 0.2s;
+}
+
+.tentacle:nth-child(3) {
+  left: 50%;
+  animation-delay: 0.4s;
+}
+
+.tentacle:nth-child(4) {
+  left: 65%;
+  animation-delay: 0.6s;
+}
+
+.tentacle:nth-child(5) {
+  left: 80%;
+  animation-delay: 0.8s;
+}
+
+.jellyfish-info h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: white;
+}
+
+.jellyfish-info p {
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.jellyfish-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+}
+
+.stat-value {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes wave {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+  }
+  25% {
+    transform: translateY(-5px) translateX(5px);
+  }
+  50% {
+    transform: translateY(-10px) translateX(0);
+  }
+  75% {
+    transform: translateY(-5px) translateX(-5px);
+  }
+}
+
+@keyframes glow {
+  from {
+    text-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+  }
+  to {
+    text-shadow: 0 0 30px rgba(102, 126, 234, 0.8), 0 0 40px rgba(118, 75, 162, 0.6);
+  }
+}
+
+/* 背景气泡效果 */
+.bubbles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.bubble {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  animation: rise 15s infinite linear;
+}
+
+@media (max-width: 768px) {
+  .header h1 {
+    font-size: 2.5rem;
+  }
+  
+  .jellyfish-container {
+    padding: 1rem;
+    gap: 1.5rem;
+  }
+  
+  .jellyfish-card {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+/* 昼夜循环效果 */
+.day-night-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 20;
+}
+
+.toggle-btn {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50px;
+  padding: 0.5rem 1rem;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+/* 白天模式 */
+.day-mode {
+  background-color: #87ceeb;
+}
+
+.day-mode .header h1 {
+  background: linear-gradient(45deg, #1e3c72 0%, #2a5298 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.day-mode .header p {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.day-mode .jellyfish-card {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.day-mode .jellyfish-info h3 {
+  color: #1e3c72;
+}
+
+.day-mode .jellyfish-info p {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.day-mode .jellyfish-stats {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.day-mode .stat-value {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+.day-mode .toggle-btn {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  color: #1e3c72;
+}
+
+.day-mode .toggle-btn:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* 夜晚模式 */
+.night-mode {
+  background-color: #0a1929;
+}
+
+/* 发光效果增强 */
+.night-mode .jellyfish-shape {
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+  animation: glow-pulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow-pulse {
+  from {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  }
+  to {
+    box-shadow: 0 0 40px rgba(255, 255, 255, 0.6), 0 0 60px rgba(255, 255, 255, 0.3);
+  }
+}
+
+@keyframes rise {
+  0% {
+    transform: translateY(100vh) scale(0.5);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.5;
+  }
+  90% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-100px) scale(1.5);
+    opacity: 0;
+  }
+}

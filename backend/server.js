@@ -3,6 +3,8 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 const db = require('./db');
 
 const app = express();
@@ -27,40 +29,7 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// 注册接口
-app.post('/api/auth/register', (req, res) => {
-  const { username, password } = req.body;
-
-  if (!username || !password) {
-    return res.status(400).json({ message: '用户名和密码不能为空' });
-  }
-
-  // 哈希密码
-  bcrypt.hash(password, 10, (err, hash) => {
-    if (err) {
-      return res.status(500).json({ message: '密码哈希失败' });
-    }
-
-    // 插入用户
-    db.run(
-      'INSERT INTO users (username, password_hash) VALUES (?, ?)',
-      [username, hash],
-      function (err) {
-        if (err) {
-          if (err.code === 'SQLITE_CONSTRAINT') {
-            return res.status(400).json({ message: '用户名已存在' });
-          }
-          return res.status(500).json({ message: '注册失败' });
-        }
-
-        // 生成令牌
-        const token = jwt.sign({ id: this.lastID, username }, SECRET_KEY, { expiresIn: '7d' });
-
-        res.json({ token, user_id: this.lastID, username });
-      }
-    );
-  });
-});
+// 注册接口已移至下方，与邮箱支持的版本合并
 
 // 登录接口
 app.post('/api/auth/login', (req, res) => {
@@ -245,7 +214,8 @@ app.post('/api/exercises/submit', authenticateToken, (req, res) => {
           });
 
           const passed = score >= 60;
-          const earnedPinecones = passed ? Math.ceil(totalQuestions / 5) : 0;
+          // 用户打卡几个单词就获得几个松果
+          const earnedPinecones = totalQuestions;
 
           // 开始事务
           db.serialize(() => {
@@ -260,52 +230,49 @@ app.post('/api/exercises/submit', authenticateToken, (req, res) => {
 
                 const exerciseId = this.lastID;
 
-                if (passed) {
-                  // 更新用户松果数量
-                  db.run(
-                    'UPDATE users SET pinecone_count = pinecone_count + ? WHERE id = ?',
-                    [earnedPinecones, userId],
-                    (err) => {
-                      if (err) {
-                        return res.status(500).json({ message: '更新松果数量失败' });
-                      }
-
-                      // 构建包含打卡词语的原因
-                      const correctWords = checkinWords.filter(checkinWord => {
-                        const userAnswer = answers.find(a => a.word_id == checkinWord.word_id);
-                        return userAnswer && userAnswer.answer.toLowerCase() === checkinWord.word.toLowerCase();
-                      });
-                      const wordList = correctWords.map(w => w.word).join(', ');
-                      const reason = wordList ? `成功捡到松果: ${wordList}` : '成功捡到松果';
-                      
-                      // 记录松果日志
-                      db.run(
-                        'INSERT INTO pinecone_logs (user_id, amount, type, reason, reference_id) VALUES (?, ?, ?, ?, ?)',
-                        [userId, earnedPinecones, 'earned', reason, exerciseId],
-                        (err) => {
-                          if (err) {
-                            return res.status(500).json({ message: '记录松果日志失败' });
-                          }
-
-                          // 更新打卡状态
-                          db.run(
-                            'UPDATE checkins SET status = ? WHERE id = ?',
-                            ['completed', checkin_id],
-                            (err) => {
-                              if (err) {
-                                return res.status(500).json({ message: '更新打卡状态失败' });
-                              }
-
-                              res.json({ passed, score: Math.round(score), pinecone_earned: earnedPinecones });
-                            }
-                          );
-                        }
-                      );
+                // 无论是否通过测试，都更新用户松果数量
+                // 更新用户松果数量
+                db.run(
+                  'UPDATE users SET pinecone_count = pinecone_count + ? WHERE id = ?',
+                  [earnedPinecones, userId],
+                  (err) => {
+                    if (err) {
+                      return res.status(500).json({ message: '更新松果数量失败' });
                     }
-                  );
-                } else {
-                  res.json({ passed, score: Math.round(score), pinecone_earned: 0 });
-                }
+
+                    // 构建包含打卡词语的原因
+                    const correctWords = checkinWords.filter(checkinWord => {
+                      const userAnswer = answers.find(a => a.word_id == checkinWord.word_id);
+                      return userAnswer && userAnswer.answer.toLowerCase() === checkinWord.word.toLowerCase();
+                    });
+                    const wordList = correctWords.map(w => w.word).join(', ');
+                    const reason = wordList ? `成功捡到松果: ${wordList}` : '成功捡到松果';
+                    
+                    // 记录松果日志
+                    db.run(
+                      'INSERT INTO pinecone_logs (user_id, amount, type, reason, reference_id) VALUES (?, ?, ?, ?, ?)',
+                      [userId, earnedPinecones, 'earned', reason, exerciseId],
+                      (err) => {
+                        if (err) {
+                          return res.status(500).json({ message: '记录松果日志失败' });
+                        }
+
+                        // 更新打卡状态
+                        db.run(
+                          'UPDATE checkins SET status = ? WHERE id = ?',
+                          ['completed', checkin_id],
+                          (err) => {
+                            if (err) {
+                              return res.status(500).json({ message: '更新打卡状态失败' });
+                            }
+
+                            res.json({ passed, score: Math.round(score), pinecone_earned: earnedPinecones });
+                          }
+                        );
+                      }
+                    );
+                  }
+                );
               }
             );
           });
@@ -479,6 +446,221 @@ app.get('/api/words/:id', authenticateToken, (req, res) => {
       res.json(word);
     }
   );
+});
+
+// 邮箱配置
+const EMAIL_CONFIG = {
+  service: 'qq', // 可以替换为其他邮箱服务
+  auth: {
+    user: 'your_email@qq.com', // 替换为实际的邮箱
+    pass: 'your_email_password' // 替换为实际的邮箱密码或授权码
+  }
+};
+
+// 发送验证邮件
+const sendVerificationEmail = async (email, code) => {
+  try {
+    // 创建邮件发送器
+    const transporter = nodemailer.createTransport(EMAIL_CONFIG);
+    
+    const info = await transporter.sendMail({
+      from: EMAIL_CONFIG.auth.user,
+      to: email,
+      subject: '松果盒子 - 邮箱验证',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #4CAF50;">欢迎使用松果盒子！</h2>
+          <p>请使用以下验证码完成邮箱验证：</p>
+          <div style="font-size: 24px; font-weight: bold; color: #4CAF50; margin: 20px 0;">
+            ${code}
+          </div>
+          <p>验证码有效期为30分钟，请及时验证。</p>
+          <p>如果您没有注册松果盒子账号，请忽略此邮件。</p>
+        </div>
+      `
+    });
+    console.log('邮件发送成功:', info.messageId);
+    return true;
+  } catch (error) {
+    console.error('邮件发送失败:', error);
+    return false;
+  }
+};
+
+// 生成验证码
+const generateVerificationCode = () => {
+  return crypto.randomBytes(3).toString('hex').toUpperCase();
+};
+
+// 注册接口 - 添加邮箱支持
+app.post('/api/auth/register', (req, res) => {
+  const { username, password, email } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ message: '用户名和密码不能为空' });
+  }
+
+  // 哈希密码
+  bcrypt.hash(password, 10, (err, hash) => {
+    if (err) {
+      return res.status(500).json({ message: '密码哈希失败' });
+    }
+
+    // 生成验证码
+    const verificationCode = generateVerificationCode();
+    const verificationExpires = new Date(Date.now() + 30 * 60 * 1000).toISOString(); // 30分钟过期
+
+    // 插入用户
+    db.run(
+      'INSERT INTO users (username, password_hash, email, verification_code, verification_expires) VALUES (?, ?, ?, ?, ?)',
+      [username, hash, email, verificationCode, verificationExpires],
+      function (err) {
+        if (err) {
+          if (err.code === 'SQLITE_CONSTRAINT') {
+            return res.status(400).json({ message: '用户名或邮箱已存在' });
+          }
+          return res.status(500).json({ message: '注册失败' });
+        }
+
+        // 发送验证邮件
+        if (email) {
+          sendVerificationEmail(email, verificationCode);
+        }
+
+        // 生成令牌
+        const token = jwt.sign({ id: this.lastID, username }, SECRET_KEY, { expiresIn: '7d' });
+
+        res.json({ 
+          token, 
+          user_id: this.lastID, 
+          username,
+          email,
+          email_verified: false,
+          message: email ? '注册成功，验证码已发送到您的邮箱' : '注册成功'
+        });
+      }
+    );
+  });
+});
+
+// 邮箱验证接口
+app.post('/api/auth/verify-email', (req, res) => {
+  const { email, code } = req.body;
+
+  if (!email || !code) {
+    return res.status(400).json({ message: '邮箱和验证码不能为空' });
+  }
+
+  // 检查验证码
+  db.get(
+    'SELECT * FROM users WHERE email = ? AND verification_code = ? AND verification_expires > ?',
+    [email, code, new Date().toISOString()],
+    (err, user) => {
+      if (err) {
+        return res.status(500).json({ message: '验证失败' });
+      }
+
+      if (!user) {
+        return res.status(400).json({ message: '验证码无效或已过期' });
+      }
+
+      // 更新用户状态
+      db.run(
+        'UPDATE users SET email_verified = true, verification_code = NULL, verification_expires = NULL WHERE id = ?',
+        [user.id],
+        (err) => {
+          if (err) {
+            return res.status(500).json({ message: '验证失败' });
+          }
+
+          res.json({ message: '邮箱验证成功' });
+        }
+      );
+    }
+  );
+});
+
+// 邮箱登录接口
+app.post('/api/auth/login/email', (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ message: '邮箱和密码不能为空' });
+  }
+
+  // 查询用户
+  db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
+    if (err) {
+      return res.status(500).json({ message: '登录失败' });
+    }
+
+    if (!user) {
+      return res.status(401).json({ message: '邮箱或密码错误' });
+    }
+
+    // 验证密码
+    bcrypt.compare(password, user.password_hash, (err, result) => {
+      if (err || !result) {
+        return res.status(401).json({ message: '邮箱或密码错误' });
+      }
+
+      // 生成令牌
+      const token = jwt.sign({ id: user.id, username: user.username }, SECRET_KEY, { expiresIn: '7d' });
+
+      res.json({ 
+        token, 
+        user_id: user.id, 
+        username: user.username, 
+        email: user.email,
+        email_verified: user.email_verified,
+        pinecone_count: user.pinecone_count 
+      });
+    });
+  });
+});
+
+// 重新发送验证码接口
+app.post('/api/auth/resend-verification', (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: '邮箱不能为空' });
+  }
+
+  // 检查用户
+  db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
+    if (err) {
+      return res.status(500).json({ message: '操作失败' });
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: '用户不存在' });
+    }
+
+    if (user.email_verified) {
+      return res.status(400).json({ message: '邮箱已验证' });
+    }
+
+    // 生成新验证码
+    const verificationCode = generateVerificationCode();
+    const verificationExpires = new Date(Date.now() + 30 * 60 * 1000).toISOString(); // 30分钟过期
+
+    // 更新验证码
+    db.run(
+      'UPDATE users SET verification_code = ?, verification_expires = ? WHERE id = ?',
+      [verificationCode, verificationExpires, user.id],
+      (err) => {
+        if (err) {
+          return res.status(500).json({ message: '操作失败' });
+        }
+
+        // 发送验证邮件
+        sendVerificationEmail(email, verificationCode);
+
+        res.json({ message: '验证码已重新发送' });
+      }
+    );
+  });
 });
 
 // 启动服务器

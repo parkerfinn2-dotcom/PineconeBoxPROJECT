@@ -27,11 +27,17 @@ const CheckIn = () => {
   const [userAnswers, setUserAnswers] = useState([])
   const navigate = useNavigate()
   const indexRef = useRef(currentIndex)
+  const userAnswersRef = useRef(userAnswers)
   
   // 同步currentIndex到ref
   useEffect(() => {
     indexRef.current = currentIndex
   }, [currentIndex])
+  
+  // 同步userAnswers到ref
+  useEffect(() => {
+    userAnswersRef.current = userAnswers
+  }, [userAnswers])
   
   // 登出功能
   const handleLogout = () => {
@@ -56,17 +62,55 @@ const CheckIn = () => {
     const fetchWords = async () => {
       setIsLoading(true)
       try {
-        console.log('Fetching words:', { currentLevel, wordCount })
+        console.log('开始获取单词:', { currentLevel, wordCount })
+        // 检查登录状态
+        const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true'
+        const token = localStorage.getItem('token')
+        console.log('登录状态:', { isLoggedIn, token: token ? '存在' : '不存在' })
+        
+        if (!isLoggedIn || !token) {
+          console.log('未登录，使用本地词库')
+          // 降级到本地数据，使用词库文件
+          const localWords = getWordsByLevel(currentLevel, parseInt(wordCount))
+          console.log('Using local words:', localWords.length)
+          console.log('本地单词ID:', localWords.map(w => w.id))
+          if (isMounted) {
+            setWords(localWords)
+            // 初始化打卡状态数组，全部为false（未打卡）
+            setCheckinStatus(new Array(localWords.length).fill(false))
+            setCurrentIndex(0)
+            setIsCompleted(false)
+            // 重置答案数组
+            setUserAnswers([])
+            setEarnedPinecones(0)
+            setIsLoading(false)
+          }
+          return
+        }
+        
         // 使用API获取单词列表
+        console.log('发送创建打卡请求到后端...')
         const response = await checkinApi.createCheckin(currentLevel, parseInt(wordCount))
+        console.log('创建打卡成功:', response)
         
         if (isMounted) {
-          console.log('Words received:', response.words.length)
-          // 保持单词的随机顺序
-          setWords(response.words)
-          setCheckinId(response.checkin_id)
-          // 初始化打卡状态数组，全部为false（未打卡）
-          setCheckinStatus(new Array(response.words.length).fill(false))
+          console.log('Words received:', response.words ? response.words.length : 0)
+          if (response.words && response.words.length > 0) {
+            // 保持单词的随机顺序
+            setWords(response.words)
+            setCheckinId(response.checkin_id)
+            // 初始化打卡状态数组，全部为false（未打卡）
+            setCheckinStatus(new Array(response.words.length).fill(false))
+          } else {
+            console.log('后端未返回单词，使用本地词库')
+            // 降级到本地数据，使用词库文件
+            const localWords = getWordsByLevel(currentLevel, parseInt(wordCount))
+            console.log('Using local words:', localWords.length)
+            console.log('本地单词ID:', localWords.map(w => w.id))
+            setWords(localWords)
+            // 初始化打卡状态数组，全部为false（未打卡）
+            setCheckinStatus(new Array(localWords.length).fill(false))
+          }
           setCurrentIndex(0)
           setIsCompleted(false)
           // 重置答案数组
@@ -75,6 +119,7 @@ const CheckIn = () => {
         }
       } catch (error) {
         console.error('获取单词失败，使用本地词库:', error)
+        console.error('错误详情:', error.message, error.stack)
         if (isMounted) {
           // 降级到本地数据，使用词库文件
           const localWords = getWordsByLevel(currentLevel, parseInt(wordCount))
@@ -238,14 +283,12 @@ const CheckIn = () => {
       answer: userAnswer
     }])
     
-    // 正确回答，获得松果
-    if (isCorrect) {
-      const newEarnedPinecones = earnedPinecones + 1
-      setEarnedPinecones(newEarnedPinecones)
-      
-      // 显示松果奖励动画
-      createPineconeReward()
-    }
+    // 每打卡一个单词，获得一个松果（不管回答是否正确）
+    const newEarnedPinecones = earnedPinecones + 1
+    setEarnedPinecones(newEarnedPinecones)
+    
+    // 显示松果奖励动画
+    createPineconeReward()
     
     // 2秒后继续
     setTimeout(() => {
@@ -268,33 +311,94 @@ const CheckIn = () => {
         
         // 定义异步函数处理后端同步
         const processSync = async () => {
+          console.log('开始处理打卡同步...')
+          
+          // 计算并更新连续打卡天数
+          const today = new Date().toDateString()
+          const lastCheckedIn = localStorage.getItem('lastCheckedIn')
+          const lastCheckedInDate = lastCheckedIn ? new Date(lastCheckedIn) : null
+          const todayDate = new Date(today)
+          
+          // 计算连续签到天数
+          let newStreakDays = parseInt(localStorage.getItem('streakDays') || '0')
+          if (!lastCheckedIn || (todayDate - lastCheckedInDate) > 86400000) { // 超过24小时
+            newStreakDays = 1
+          } else {
+            newStreakDays += 1
+          }
+          
+          // 保存签到状态
+          localStorage.setItem('lastCheckedIn', today)
+          localStorage.setItem('streakDays', newStreakDays.toString())
+          console.log('更新连续打卡天数:', { old: parseInt(localStorage.getItem('streakDays') || '0'), new: newStreakDays })
+          
+          // 检查登录状态
+          const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true'
+          const token = localStorage.getItem('token')
+          console.log('登录状态:', { isLoggedIn, token: token ? '存在' : '不存在' })
+          
           // 一次性提交所有答案到后端
           try {
-            if (checkinId && userAnswers.length > 0) {
-              const response = await exerciseApi.submitAnswers(checkinId, userAnswers)
-              console.log('后端同步成功:', response)
-              
-              // 更新localStorage中的松果数量
-              if (response.pinecone_earned) {
-                const currentPinecones = parseInt(localStorage.getItem('totalPinecones') || '0')
-                const newPinecones = currentPinecones + response.pinecone_earned
-                localStorage.setItem('totalPinecones', newPinecones.toString())
+            console.log('提交答案到后端:', {
+              checkinId: checkinId,
+              userAnswers: userAnswersRef.current,
+              answerCount: userAnswersRef.current.length,
+              isLoggedIn: isLoggedIn
+            })
+            
+            // 无论是否登录，先更新本地松果数量
+            if (earnedPinecones > 0) {
+              const currentPinecones = parseInt(localStorage.getItem('totalPinecones') || '0')
+              const newPinecones = currentPinecones + earnedPinecones
+              localStorage.setItem('totalPinecones', newPinecones.toString())
+              console.log('本地更新松果数量:', { current: currentPinecones, earned: earnedPinecones, new: newPinecones })
+            }
+            
+            // 尝试同步到后端
+            if (isLoggedIn && token && checkinId && userAnswersRef.current.length > 0) {
+              try {
+                const response = await exerciseApi.submitAnswers(checkinId, userAnswersRef.current)
+                console.log('后端同步成功:', response)
+                
+                // 如果后端返回了不同的松果数量，使用后端的数据
+                if (response.pinecone_earned) {
+                  const currentPinecones = parseInt(localStorage.getItem('totalPinecones') || '0')
+                  const backendPinecones = currentPinecones - earnedPinecones + response.pinecone_earned
+                  localStorage.setItem('totalPinecones', backendPinecones.toString())
+                  console.log('后端数据优先更新松果数量:', { current: currentPinecones, backend: response.pinecone_earned, new: backendPinecones })
+                }
+              } catch (apiError) {
+                console.error('后端API调用失败:', apiError)
+                // API调用失败时，保持本地数据不变
+                console.log('使用本地松果数量数据')
               }
+            } else {
+              console.log('跳过后端提交:', {
+                isLoggedIn: isLoggedIn,
+                hasToken: !!token,
+                hasCheckinId: !!checkinId,
+                hasAnswers: userAnswersRef.current.length > 0
+              })
             }
           } catch (error) {
             console.error('同步松果数据失败:', error)
-            // 同步失败时，仍然更新前端松果数量
-            const currentPinecones = parseInt(localStorage.getItem('totalPinecones') || '0')
-            const newPinecones = currentPinecones + earnedPinecones
-            localStorage.setItem('totalPinecones', newPinecones.toString())
+            // 同步失败时，确保本地松果数量已更新
+            if (earnedPinecones > 0) {
+              const currentPinecones = parseInt(localStorage.getItem('totalPinecones') || '0')
+              const newPinecones = currentPinecones + earnedPinecones
+              localStorage.setItem('totalPinecones', newPinecones.toString())
+              console.log('同步失败，使用本地数据更新松果数量:', { current: currentPinecones, earned: earnedPinecones, new: newPinecones })
+            }
           }
           
           // 尝试从后端同步最新的松果数量
           try {
-            const pineconeResponse = await pineconeApi.getTotal()
-            console.log('最新松果数量:', pineconeResponse)
-            if (pineconeResponse.pinecone_count) {
-              localStorage.setItem('totalPinecones', pineconeResponse.pinecone_count.toString())
+            if (isLoggedIn && token) {
+              const pineconeResponse = await pineconeApi.getTotal()
+              console.log('最新松果数量:', pineconeResponse)
+              if (pineconeResponse.pinecone_count) {
+                localStorage.setItem('totalPinecones', pineconeResponse.pinecone_count.toString())
+              }
             }
           } catch (error) {
             console.error('获取最新松果数量失败:', error)
@@ -303,6 +407,7 @@ const CheckIn = () => {
           // 完成打卡后发送微信消息
           sendCheckInToWechat()
           
+          console.log('打卡同步处理完成')
           setIsProcessing(false)
         }
         
@@ -994,47 +1099,80 @@ const CheckIn = () => {
             )}
           </div>
         ) : (
-          <div style={{ textAlign: 'center', padding: '40px', backgroundColor: 'var(--card-bg)', borderRadius: '20px', boxShadow: 'var(--shadow)', maxWidth: '500px', margin: '0 auto' }}>
-            <div style={{ fontSize: '6rem', marginBottom: '20px' }}>🎉</div>
-            <h2 style={{ color: 'var(--primary-color)', marginBottom: '20px' }}>太棒了！</h2>
-            <p style={{ fontSize: '1.2rem', marginBottom: '30px', color: 'var(--text-color)' }}>
-              你已经完成了 {getJourneyName(currentLevel)} 的所有单词打卡任务！
-            </p>
+          <div style={{ textAlign: 'center', padding: '50px', backgroundColor: 'var(--card-bg)', borderRadius: '30px', boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)', maxWidth: '550px', margin: '0 auto', animation: 'slideUp 0.7s ease-out', position: 'relative', overflow: 'hidden', border: '3px solid var(--primary-color)', background: 'linear-gradient(135deg, var(--card-bg) 0%, var(--light-color) 100%)' }}>
+            {/* 装饰元素 */}
+            <div style={{
+              position: 'absolute',
+              top: '-60px',
+              right: '-60px',
+              width: '180px',
+              height: '180px',
+              backgroundColor: 'rgba(255, 152, 0, 0.15)',
+              borderRadius: '50%',
+              zIndex: 0,
+              animation: 'pulse 3s ease-in-out infinite'
+            }}></div>
+            <div style={{
+              position: 'absolute',
+              bottom: '-60px',
+              left: '-60px',
+              width: '180px',
+              height: '180px',
+              backgroundColor: 'rgba(76, 175, 80, 0.15)',
+              borderRadius: '50%',
+              zIndex: 0,
+              animation: 'pulse 3s ease-in-out infinite 1s'
+            }}></div>
             
-            {/* 奖励信息 */}
-            <div style={{ marginBottom: '30px', padding: '20px', backgroundColor: 'var(--light-color)', borderRadius: '15px' }}>
-              <h3 style={{ color: 'var(--secondary-color)', marginBottom: '15px' }}>🏆 今日奖励</h3>
-              <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: '15px' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '2rem', marginBottom: '10px' }}>🌰</div>
-                  <div style={{ color: 'var(--text-color)', marginBottom: '5px' }}>获得松果</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>{earnedPinecones}个</div>
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <div style={{ fontSize: '7rem', marginBottom: '25px', animation: 'bounce 2s infinite' }}>🎉</div>
+              <h2 style={{ color: 'var(--primary-color)', marginBottom: '25px', fontSize: '2.3rem', textShadow: '0 3px 6px rgba(0, 0, 0, 0.15)' }}>太棒了！</h2>
+              <p style={{ fontSize: '1.3rem', marginBottom: '35px', color: 'var(--text-color)', lineHeight: '1.8', padding: '0 20px' }}>
+                你已经完成了 {getJourneyName(currentLevel)} 的所有单词打卡任务！
+              </p>
+              
+              {/* 奖励信息 */}
+              <div style={{ marginBottom: '35px', padding: '25px', backgroundColor: 'var(--light-color)', borderRadius: '20px', boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)' }}>
+                <h3 style={{ color: 'var(--secondary-color)', marginBottom: '20px', fontSize: '1.5rem' }}>🏆 今日奖励</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: '20px', gap: '15px' }}>
+                  <div style={{ textAlign: 'center', flex: 1, padding: '15px', backgroundColor: 'rgba(255, 152, 0, 0.1)', borderRadius: '15px', transition: 'all 0.3s ease', animation: 'fadeIn 1s ease-out' }}>
+                    <div style={{ fontSize: '2.5rem', marginBottom: '10px', animation: 'bounce 2.5s infinite' }}>🌰</div>
+                    <div style={{ color: 'var(--text-color)', marginBottom: '5px', fontSize: '1.1rem' }}>获得松果</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>{earnedPinecones}个</div>
+                  </div>
+                  <div style={{ textAlign: 'center', flex: 1, padding: '15px', backgroundColor: 'rgba(255, 193, 7, 0.1)', borderRadius: '15px', transition: 'all 0.3s ease', animation: 'fadeIn 1.2s ease-out' }}>
+                    <div style={{ fontSize: '2.5rem', marginBottom: '10px', animation: 'bounce 2.5s infinite 0.3s' }}>🔥</div>
+                    <div style={{ color: 'var(--text-color)', marginBottom: '5px', fontSize: '1.1rem' }}>连续打卡</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>{parseInt(localStorage.getItem('streakDays') || '0')}天</div>
+                  </div>
+                  <div style={{ textAlign: 'center', flex: 1, padding: '15px', backgroundColor: 'rgba(76, 175, 80, 0.1)', borderRadius: '15px', transition: 'all 0.3s ease', animation: 'fadeIn 1.4s ease-out' }}>
+                    <div style={{ fontSize: '2.5rem', marginBottom: '10px', animation: 'bounce 2.5s infinite 0.6s' }}>📚</div>
+                    <div style={{ color: 'var(--text-color)', marginBottom: '5px', fontSize: '1.1rem' }}>累计单词</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>{parseInt(localStorage.getItem('totalWords') || '0')}个</div>
+                  </div>
                 </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '2rem', marginBottom: '10px' }}>🔥</div>
-                  <div style={{ color: 'var(--text-color)', marginBottom: '5px' }}>连续打卡</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>{parseInt(localStorage.getItem('streakDays') || '0')}天</div>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '2rem', marginBottom: '10px' }}>📚</div>
-                  <div style={{ color: 'var(--text-color)', marginBottom: '5px' }}>累计单词</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>{parseInt(localStorage.getItem('totalWords') || '0')}个</div>
+                {/* 松果总数 */}
+                <div style={{ marginTop: '25px', padding: '20px', backgroundColor: 'rgba(76, 175, 80, 0.15)', borderRadius: '15px', border: '2px solid rgba(76, 175, 80, 0.3)', animation: 'fadeIn 1.6s ease-out' }}>
+                  <div style={{ fontSize: '1.1rem', color: 'var(--text-color)', marginBottom: '8px', fontWeight: 'bold' }}>🏠 主页松果总数</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>
+                    {parseInt(localStorage.getItem('totalPinecones') || '0')}个
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap' }}>
-              <button onClick={handleRestart} className="healing-btn">
-                重新开始
-              </button>
-              {currentLevel < 4 && (
-                <button onClick={() => handleLevelChange(currentLevel + 1)} className="healing-btn">
-                  挑战 {getJourneyName(currentLevel + 1)}
+              
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
+                <button onClick={handleRestart} className="healing-btn" style={{ padding: '15px 30px', fontSize: '1.1rem', animation: 'fadeIn 1.8s ease-out' }}>
+                  重新开始
                 </button>
-              )}
-              <Link to="/profile">
-                <button className="healing-btn">查看成就</button>
-              </Link>
+                {currentLevel < 4 && (
+                  <button onClick={() => handleLevelChange(currentLevel + 1)} className="healing-btn" style={{ padding: '15px 30px', fontSize: '1.1rem', animation: 'fadeIn 2s ease-out' }}>
+                    挑战 {getJourneyName(currentLevel + 1)}
+                  </button>
+                )}
+                <Link to="/profile">
+                  <button className="healing-btn" style={{ padding: '15px 30px', fontSize: '1.1rem', animation: 'fadeIn 2.2s ease-out' }}>查看成就</button>
+                </Link>
+              </div>
             </div>
           </div>
         )}

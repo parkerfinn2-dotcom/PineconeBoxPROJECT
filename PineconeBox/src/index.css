@@ -20,19 +20,60 @@
 }
 
 body {
-  font-family: 'Comic Sans MS', 'Arial Rounded MT Bold', sans-serif;
+  font-family: 'Comic Sans MS', 'Arial Rounded MT Bold', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: var(--background-color);
   color: var(--text-color);
   line-height: 1.6;
+  background-image: 
+    radial-gradient(var(--cloud-color) 1px, transparent 1px),
+    radial-gradient(var(--cloud-color) 1px, transparent 1px);
+  background-size: 50px 50px;
+  background-position: 0 0, 25px 25px;
+  position: relative;
 }
 
-/* 治愈型按钮样式 - 打卡页优化版 */
+/* 添加漂浮的云朵和星星装饰 */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ctext x='50%25' y='50%25' font-size='40' text-anchor='middle' dominant-baseline='middle'%3E☁️%3C/text%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50' viewBox='0 0 50 50'%3E%3Ctext x='50%25' y='50%25' font-size='20' text-anchor='middle' dominant-baseline='middle'%3E⭐%3C/text%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat;
+  background-position: 10% 10%, 90% 20%;
+  background-size: 100px 100px, 50px 50px;
+  opacity: 0.3;
+  z-index: -1;
+  animation: float 30s ease-in-out infinite;
+}
+
+/* 漂浮动画 */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-10px) rotate(2deg);
+  }
+  50% {
+    transform: translateY(0) rotate(0deg);
+  }
+  75% {
+    transform: translateY(10px) rotate(-2deg);
+  }
+}
+
+/* 可爱治愈型按钮样式 - 儿童青少年优化版 */
 .healing-btn {
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); /* 渐变按钮 */
   color: white;
   border: none;
-  padding: 12px 24px;
-  border-radius: 25px;
+  padding: 15px 28px;
+  border-radius: 30px;
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
@@ -41,6 +82,21 @@ body {
   margin: 10px;
   position: relative;
   overflow: hidden;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  animation: buttonPulse 2s ease-in-out infinite;
+}
+
+/* 按钮脉冲动画 */
+@keyframes buttonPulse {
+  0% {
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
+  }
+  50% {
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+  }
+  100% {
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
+  }
 }
 
 .healing-btn::before {
@@ -50,13 +106,42 @@ body {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
   transition: left 0.5s ease;
 }
 
+.healing-btn::after {
+  content: '✨';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 100px;
+  height: 100px;
+  font-size: 20px;
+  opacity: 0;
+  transition: all 0.5s ease;
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+/* 闪光动画 */
+@keyframes sparkle {
+  0% {
+    transform: rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    transform: rotate(180deg);
+    opacity: 0.5;
+  }
+  100% {
+    transform: rotate(360deg);
+    opacity: 0;
+  }
+}
+
 .healing-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--hover-shadow);
+  transform: translateY(-5px) scale(1.05);
+  box-shadow: 0 10px 30px rgba(76, 175, 80, 0.4);
   background: linear-gradient(135deg, var(--accent-color), var(--primary-color)); /* 悬停渐变反转 */
 }
 
@@ -64,72 +149,272 @@ body {
   left: 100%; /* 添加入射光动画 */
 }
 
+.healing-btn:hover::after {
+  top: 50%;
+  right: 10%;
+  transform: translate(-50%, -50%);
+}
+
 .healing-btn:active {
-  transform: translateY(-1px);
+  transform: translateY(0) scale(0.95);
   box-shadow: var(--shadow);
 }
 
-/* 难度选择按钮样式 */
+/* 按钮点击动画 */
+.healing-btn:active::before {
+  animation: clickEffect 0.5s ease-out;
+}
+
+@keyframes clickEffect {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* 难度选择按钮样式 - 儿童青少年优化版 */
 .level-btn {
-  background-color: var(--secondary-color); /* 未选中按钮 - 浅绿色 */
+  background: linear-gradient(135deg, var(--secondary-color), #45B7AA); /* 渐变按钮 */
   color: white;
   border: none;
-  padding: 10px 20px;
-  border-radius: 20px;
+  padding: 12px 24px;
+  border-radius: 25px;
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin: 5px;
+  margin: 8px;
   box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  animation: levelBtnFloat 3s ease-in-out infinite;
+}
+
+/* 按钮漂浮动画 */
+@keyframes levelBtnFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.level-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
 }
 
 .level-btn.selected {
-  background-color: var(--accent-color); /* 选中按钮 - 深墨绿色 */
-  transform: scale(1.1);
-  box-shadow: var(--hover-shadow);
+  background: linear-gradient(135deg, var(--accent-color), var(--primary-color)); /* 选中按钮渐变 */
+  transform: scale(1.15) translateY(-5px);
+  box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+  animation: selectedPulse 2s ease-in-out infinite;
+}
+
+/* 选中按钮脉冲动画 */
+@keyframes selectedPulse {
+  0% {
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+  }
+  50% {
+    box-shadow: 0 12px 35px rgba(76, 175, 80, 0.6);
+  }
+  100% {
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+  }
 }
 
 .level-btn:hover:not(.selected) {
-  background-color: var(--highlight-color); /* 悬停未选中按钮 - 活泼黄绿色 */
-  transform: translateY(-2px);
+  background: linear-gradient(135deg, var(--highlight-color), var(--secondary-color)); /* 悬停渐变 */
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
 }
 
-/* 标签按钮样式 */
+.level-btn:hover::before {
+  left: 100%; /* 添加入射光动画 */
+}
+
+.level-btn:active {
+  transform: translateY(0) scale(0.95);
+  box-shadow: var(--shadow);
+}
+
+/* 标签按钮样式 - 儿童青少年优化版 */
 .tag-btn {
-  background-color: var(--secondary-color); /* 标签按钮 - 浅绿色 */
+  background: linear-gradient(135deg, var(--secondary-color), #45B7AA); /* 渐变按钮 */
   color: white;
   border: none;
-  padding: 8px 16px;
-  border-radius: 15px;
+  padding: 10px 20px;
+  border-radius: 20px;
   font-size: 14px;
+  font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin: 5px;
+  margin: 8px;
   box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  animation: tagBtnFloat 4s ease-in-out infinite;
+}
+
+/* 标签按钮漂浮动画 */
+@keyframes tagBtnFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+.tag-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.tag-btn::after {
+  content: '🌟';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 50px;
+  height: 50px;
+  font-size: 15px;
+  opacity: 0;
+  transition: all 0.5s ease;
 }
 
 .tag-btn:hover {
-  background-color: var(--highlight-color); /* 悬停标签 - 活泼黄绿色 */
-  transform: translateY(-2px);
-  box-shadow: var(--hover-shadow);
+  background: linear-gradient(135deg, var(--highlight-color), var(--secondary-color)); /* 悬停渐变 */
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
 }
 
-/* 卡片样式 - 打卡页优化版 */
+.tag-btn:hover::before {
+  left: 100%; /* 添加入射光动画 */
+}
+
+.tag-btn:hover::after {
+  top: 50%;
+  right: 10%;
+  transform: translate(-50%, -50%);
+  opacity: 0.5;
+}
+
+.tag-btn:active {
+  transform: translateY(0) scale(0.95);
+  box-shadow: var(--shadow);
+}
+
+/* 卡片样式 - 儿童青少年优化版 */
 .card {
-  background: linear-gradient(135deg, var(--card-bg), #faf5e6); /* 浅米白渐变 */
-  border-radius: 20px;
-  padding: 20px;
+  background: linear-gradient(135deg, var(--card-bg), #F9F9F9); /* 纯白渐变 */
+  border-radius: 25px;
+  padding: 30px;
   box-shadow: var(--shadow);
   margin: 20px;
   transition: all 0.3s ease;
-  border: 1px solid rgba(76, 175, 80, 0.1); /* 细边框 */
+  border: 2px solid rgba(76, 175, 80, 0.2); /* 细边框 */
+  position: relative;
+  overflow: hidden;
+  animation: cardFloat 6s ease-in-out infinite;
+}
+
+/* 卡片漂浮动画 */
+@keyframes cardFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%);
+  transform: rotate(45deg);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.card::after {
+  content: '🌈';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 24px;
+  opacity: 0.3;
+  transition: all 0.3s ease;
+  animation: rainbowRotate 5s linear infinite;
+}
+
+/* 彩虹旋转动画 */
+@keyframes rainbowRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--hover-shadow);
-  background: linear-gradient(135deg, #faf5e6, var(--card-bg)); /* 悬停渐变反转 */
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 15px 40px rgba(76, 175, 80, 0.4);
+  background: linear-gradient(135deg, #F9F9F9, var(--card-bg)); /* 悬停渐变反转 */
+  border-color: rgba(76, 175, 80, 0.4);
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+.card:hover::after {
+  transform: scale(1.2) rotate(360deg);
+  opacity: 0.5;
+}
+
+/* 卡片内容动画 */
+.card-content {
+  position: relative;
+  z-index: 1;
+  animation: contentFadeIn 0.5s ease-out;
+}
+
+@keyframes contentFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* 容器样式 */
@@ -139,40 +424,157 @@ body {
   padding: 20px;
 }
 
-/* 标题样式 - 优化版 */
+/* 标题样式 - 儿童青少年优化版 */
 h1 {
   color: var(--primary-color);
-  font-size: 2.5rem;
+  font-size: 3rem;
   text-align: center;
-  margin: 20px 0;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-  transition: color 0.3s ease;
+  margin: 30px 0;
+  text-shadow: 3px 3px 6px rgba(76, 175, 80, 0.3);
+  transition: all 0.3s ease;
+  position: relative;
+  animation: titleFloat 5s ease-in-out infinite;
+}
+
+/* 标题漂浮动画 */
+@keyframes titleFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+h1::before {
+  content: '✨';
+  position: absolute;
+  left: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+h1::after {
+  content: '✨';
+  position: absolute;
+  right: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  animation: sparkle 2s ease-in-out infinite reverse;
 }
 
 /* 快乐单词打卡标题特殊样式 */
 h2 {
-  color: var(--accent-color); /* 暖橙色点缀 */
+  color: var(--accent-color); /* 明亮黄色点缀 */
+  font-size: 2.5rem;
+  text-align: center;
+  margin: 20px 0;
+  text-shadow: 2px 2px 6px rgba(255, 209, 102, 0.4);
+  animation: titleGlow 3s ease-in-out infinite alternate;
+  position: relative;
+}
+
+/* 标题发光动画 */
+@keyframes titleGlow {
+  from {
+    text-shadow: 2px 2px 6px rgba(255, 209, 102, 0.4);
+    transform: scale(1);
+  }
+  to {
+    text-shadow: 2px 2px 15px rgba(255, 209, 102, 0.8);
+    transform: scale(1.02);
+  }
+}
+
+h2::before {
+  content: '🌟';
+  position: absolute;
+  left: -30px;
+  top: 50%;
+  transform: translateY(-50%);
+  animation: starRotate 3s linear infinite;
+}
+
+/* 星星旋转动画 */
+@keyframes starRotate {
+  0% {
+    transform: translateY(-50%) rotate(0deg);
+  }
+  100% {
+    transform: translateY(-50%) rotate(360deg);
+  }
+}
+
+h2::after {
+  content: '🌟';
+  position: absolute;
+  right: -30px;
+  top: 50%;
+  transform: translateY(-50%);
+  animation: starRotate 3s linear infinite reverse;
+}
+
+/* 副标题样式 */
+h3 {
+  color: var(--secondary-color);
   font-size: 2rem;
   text-align: center;
   margin: 15px 0;
-  text-shadow: 1px 1px 3px rgba(255, 165, 0, 0.3);
-  animation: warmGlow 3s ease-in-out infinite alternate;
+  text-shadow: 1px 1px 3px rgba(78, 205, 196, 0.3);
+  transition: all 0.3s ease;
 }
 
-/* 暖光动画 */
-@keyframes warmGlow {
-  from { text-shadow: 1px 1px 3px rgba(255, 165, 0, 0.3); }
-  to { text-shadow: 1px 1px 8px rgba(255, 165, 0, 0.6); }
+h3:hover {
+  transform: scale(1.05);
+  text-shadow: 1px 1px 8px rgba(78, 205, 196, 0.6);
 }
 
-/* 导航样式 */
+/* 导航样式 - 儿童青少年优化版 */
 nav {
   display: flex;
-  justify-content: center;
-  padding: 20px;
-  background-color: var(--light-color);
-  border-radius: 0 0 30px 30px;
-  box-shadow: var(--shadow);
+  justify-content: space-between;
+  align-items: center;
+  padding: 25px;
+  background: linear-gradient(135deg, var(--light-color), #FFFFFF); /* 渐变背景 */
+  border-radius: 30px;
+  box-shadow: 0 8px 30px rgba(76, 175, 80, 0.2);
+  margin: 20px;
+  position: relative;
+  overflow: hidden;
+  animation: navFloat 8s ease-in-out infinite;
+}
+
+/* 导航栏漂浮动画 */
+@keyframes navFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+nav::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(76, 175, 80, 0.1) 0%, transparent 70%);
+  transform: rotate(45deg);
+  animation: navShimmer 5s ease-in-out infinite;
+}
+
+/* 导航栏微光动画 */
+@keyframes navShimmer {
+  0%, 100% {
+    transform: rotate(45deg) translateX(-100%);
+  }
+  50% {
+    transform: rotate(45deg) translateX(100%);
+  }
 }
 
 .nav-link {
@@ -182,11 +584,58 @@ nav {
   margin: 0 20px;
   font-size: 18px;
   transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+  animation: navLinkFloat 4s ease-in-out infinite;
+}
+
+/* 导航链接漂浮动画 */
+@keyframes navLinkFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
 }
 
 .nav-link:hover {
   color: var(--primary-color);
-  transform: scale(1.1);
+  transform: scale(1.15) translateY(-5px);
+  text-shadow: 1px 1px 5px rgba(76, 175, 80, 0.3);
+}
+
+.nav-link::before {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  transition: width 0.3s ease;
+  border-radius: 3px;
+}
+
+.nav-link:hover::before {
+  width: 100%;
+}
+
+/* 导航图标样式 */
+.nav-icon {
+  font-size: 24px;
+  margin-right: 8px;
+  animation: iconSpin 3s ease-in-out infinite;
+}
+
+/* 图标旋转动画 */
+@keyframes iconSpin {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
 }
 
 /* 动画效果 */
@@ -299,6 +748,36 @@ nav {
   color: var(--primary-color);
   margin-bottom: 20px;
   animation: bounce 2s infinite;
+}
+
+/* 响应式logo大小 */
+@media (max-width: 768px) {
+  .logo {
+    font-size: 4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo {
+    font-size: 3rem;
+  }
+}
+
+/* Home页面特殊logo样式 */
+.home-container .logo {
+  font-size: 8rem;
+}
+
+@media (max-width: 768px) {
+  .home-container .logo {
+    font-size: 4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-container .logo {
+    font-size: 3rem;
+  }
 }
 
 /* 打卡页面样式 */
