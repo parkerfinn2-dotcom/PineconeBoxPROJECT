@@ -89,18 +89,50 @@ const DialogAI = ({ scenario }) => {
       // 创建新的朗读实例
       const utterance = new SpeechSynthesisUtterance(text);
       
-      // 尝试选择高质量的英语语音
-      const voices = window.speechSynthesis.getVoices();
-      const englishVoice = voices.find(voice => 
-        voice.lang === 'en-US' && voice.name.includes('Microsoft')
-      ) || voices.find(voice => 
-        voice.lang === 'en-US'
-      );
+      // 强制选择男声，即使之前的选择失败
+      let voiceToUse = null;
       
-      if (englishVoice) {
-        utterance.voice = englishVoice;
+      // 再次尝试获取并选择男声
+      const voices = window.speechSynthesis.getVoices();
+      const maleKeywords = ['male', 'man', 'boy', 'david', 'paul', 'john', 'james', 'robert', 'michael', 'william', 'steve', 'george', 'thomas', 'charles', 'joseph', 'daniel', 'matthew', 'anthony', 'andrew', 'david', 'microsoft david', 'google us english male', 'us english male', 'english us male', 'american male', 'us male', 'en-us male'];
+      const femaleKeywords = ['female', 'woman', 'girl', 'sarah', 'emily', 'jennifer', 'lisa', 'mary', 'anna', 'julia', 'emma', 'olivia', 'sophia', 'isabella', 'mia', 'charlotte', 'amelia', 'harper', 'evelyn', 'abigail', 'elizabeth', 'sophie', 'aria', 'grace', 'chloe', 'penelope', 'layla', 'nora'];
+      
+      // 过滤出所有非女性语音
+      const nonFemaleVoices = voices.filter(voice => {
+        const voiceName = voice.name.toLowerCase();
+        return !femaleKeywords.some(keyword => voiceName.includes(keyword));
+      });
+      
+      // 尝试找到男声
+      let foundMaleVoice = null;
+      for (const keyword of maleKeywords) {
+        foundMaleVoice = nonFemaleVoices.find(v => 
+          v.name.toLowerCase().includes(keyword.toLowerCase())
+        );
+        if (foundMaleVoice) break;
+      }
+      
+      // 如果找到男声，使用它
+      if (foundMaleVoice) {
+        voiceToUse = foundMaleVoice;
+        console.log('Forced male voice:', foundMaleVoice.name);
+      } else if (nonFemaleVoices.length > 0) {
+        // 如果没有找到明确的男声，使用第一个非女性语音
+        voiceToUse = nonFemaleVoices[0];
+        console.log('Using non-female voice:', voiceToUse.name);
+      } else if (voices.length > 0) {
+        // 万不得已，使用第一个可用语音
+        voiceToUse = voices[0];
+        console.log('Using first available voice:', voiceToUse.name);
+      }
+      
+      // 设置语音参数
+      if (voiceToUse) {
+        utterance.voice = voiceToUse;
+        console.log('Using voice:', voiceToUse.name);
       } else {
         utterance.lang = 'en-US';
+        console.log('Using default language: en-US');
       }
       
       utterance.rate = 0.8; // 适合老年人的语速
