@@ -16,6 +16,12 @@ const Home = () => {
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 })
   const [showWechatModal, setShowWechatModal] = useState(false)
   const [wechat, setWechat] = useState('')
+  const [showLoginModal, setShowLoginModal] = useState(false)
+  const [showRegisterModal, setShowRegisterModal] = useState(false)
+  const [loginUsername, setLoginUsername] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+  const [isLoginLoading, setIsLoginLoading] = useState(false)
+  const [loginError, setLoginError] = useState('')
 
   // 检查是否今天已经开过小盲盒
   useEffect(() => {
@@ -85,6 +91,49 @@ const Home = () => {
   }
 
   // 发送打卡信息到微信的功能已移至CheckIn.jsx，在用户完成打卡后发送
+
+  // 登录表单提交处理
+  const handleLoginSubmit = async () => {
+    if (!loginUsername || !loginPassword) {
+      setLoginError('请输入用户名和密码');
+      setTimeout(() => setLoginError(''), 3000);
+      return;
+    }
+
+    setIsLoginLoading(true);
+    setLoginError('');
+
+    try {
+      // 导入authApi
+      const { authApi } = await import('../services/api');
+      const response = await authApi.login(loginUsername, loginPassword);
+
+      // 登录成功，保存token和用户信息
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('username', response.username);
+      localStorage.setItem('user_id', response.user_id);
+      localStorage.setItem('pinecone_count', response.pinecone_count);
+      if (response.email) {
+        localStorage.setItem('email', response.email);
+        localStorage.setItem('email_verified', response.email_verified);
+      }
+
+      // 关闭登录弹窗
+      setShowLoginModal(false);
+      // 重置表单
+      setLoginUsername('');
+      setLoginPassword('');
+      // 刷新页面或跳转到主页
+      window.location.reload();
+    } catch (error) {
+      console.error('登录失败:', error);
+      setLoginError(error.message || '登录失败，请检查用户名和密码');
+      setTimeout(() => setLoginError(''), 3000);
+    } finally {
+      setIsLoginLoading(false);
+    }
+  }
 
   // 打开盲盒
   const openBlindBox = () => {
@@ -273,13 +322,177 @@ const Home = () => {
 
       {/* 登录/注册入口 */}
       <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'center' }}>
-        <Link to="/login">
-          <button className="healing-btn">登录</button>
-        </Link>
-        <Link to="/register">
-          <button className="healing-btn">注册</button>
-        </Link>
+        <button 
+          className="healing-btn"
+          onClick={() => setShowLoginModal(true)}
+        >
+          登录
+        </button>
+        <button 
+          className="healing-btn"
+          onClick={() => setShowRegisterModal(true)}
+        >
+          注册
+        </button>
       </div>
+
+      {/* 登录弹窗 */}
+      {showLoginModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'var(--card-bg)',
+            borderRadius: '20px',
+            padding: '40px',
+            boxShadow: 'var(--shadow)',
+            maxWidth: '400px',
+            width: '100%',
+            textAlign: 'center',
+            position: 'relative'
+          }}>
+            {/* 关闭按钮 */}
+            <button 
+              onClick={() => {
+                setShowLoginModal(false);
+                setLoginError('');
+              }}
+              style={{
+                position: 'absolute',
+                top: '15px',
+                right: '15px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                color: 'var(--text-color)'
+              }}
+            >
+              ×
+            </button>
+            
+            <h2 style={{ color: 'var(--primary-color)', marginBottom: '30px' }}>松果盒子 PineconeBox</h2>
+            <h3 style={{ color: 'var(--secondary-color)', marginBottom: '30px', fontSize: '1.5rem' }}>欢迎回来</h3>
+            
+            {/* 错误信息 */}
+            {loginError && (
+              <div style={{
+                color: 'var(--accent-color)',
+                marginBottom: '20px',
+                fontWeight: 'bold',
+                backgroundColor: 'var(--light-color)',
+                padding: '10px',
+                borderRadius: '15px',
+                border: '2px solid var(--accent-color)'
+              }}>
+                {loginError}
+              </div>
+            )}
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ textAlign: 'left' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--text-color)' }}>用户名</label>
+                <input 
+                  type="text" 
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '15px',
+                    border: '2px solid var(--primary-color)',
+                    fontSize: '16px',
+                    fontFamily: 'inherit',
+                    backgroundColor: 'var(--background-color)',
+                    color: 'var(--text-color)',
+                    transition: 'all 0.3s ease'
+                  }}
+                  value={loginUsername}
+                  onChange={(e) => setLoginUsername(e.target.value)}
+                  disabled={isLoginLoading}
+                />
+              </div>
+              
+              <div style={{ textAlign: 'left' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: 'var(--text-color)' }}>密码</label>
+                <input 
+                  type="password" 
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '15px',
+                    border: '2px solid var(--primary-color)',
+                    fontSize: '16px',
+                    fontFamily: 'inherit',
+                    backgroundColor: 'var(--background-color)',
+                    color: 'var(--text-color)',
+                    transition: 'all 0.3s ease'
+                  }}
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  disabled={isLoginLoading}
+                />
+              </div>
+              
+              <button 
+                type="button" 
+                className="healing-btn"
+                style={{ marginTop: '10px' }}
+                onClick={handleLoginSubmit}
+                disabled={isLoginLoading}
+              >
+                {isLoginLoading ? (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{
+                      width: '20px',
+                      height: '20px',
+                      border: '3px solid rgba(255, 255, 255, 0.3)',
+                      borderTop: '3px solid white',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite',
+                      marginRight: '10px'
+                    }}></div>
+                    登录中...
+                  </div>
+                ) : '登录'}
+              </button>
+              
+              {/* 测试用户登录 */}
+              <button 
+                onClick={() => {
+                  setLoginUsername('testuser');
+                  setLoginPassword('password123');
+                }}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                  color: 'var(--primary-color)',
+                  border: '2px solid var(--primary-color)',
+                  borderRadius: '15px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+                disabled={isLoginLoading}
+              >
+                🧪 测试用户登录
+              </button>
+              <div style={{ marginTop: '10px', fontSize: '12px', color: 'var(--text-color)', textAlign: 'center' }}>
+                自动填充测试账号：testuser / password123
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 底部信息 */}
       <div style={{ marginTop: '50px', fontSize: '14px', color: '#8d6e63' }}>

@@ -153,6 +153,14 @@ export const pineconeApi = {
   },
 };
 
+// 用户状态相关API
+export const userApi = {
+  // 获取用户打卡和松果状态
+  getStatus: async () => {
+    return request('/user/status');
+  },
+};
+
 // 松果币银行相关API
 export const bankApi = {
   // 获取松果币银行信息

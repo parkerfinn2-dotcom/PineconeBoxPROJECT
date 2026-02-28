@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import WordCard from '../components/WordCard'
-import { checkinApi, exerciseApi, pineconeApi } from '../services/api'
+import { checkinApi, exerciseApi, pineconeApi, userApi } from '../services/api'
 import { getWordsByLevel } from '../data/wordLibraryIntegrated'
 
 const CheckIn = () => {
@@ -278,10 +278,11 @@ const CheckIn = () => {
     setQuizResult(isCorrect)
     
     // 保存答案到数组
-    setUserAnswers(prev => [...prev, {
+    const newUserAnswer = {
       word_id: currentQuizWord.id,
       answer: userAnswer
-    }])
+    }
+    setUserAnswers(prev => [...prev, newUserAnswer])
     
     // 每打卡一个单词，获得一个松果（不管回答是否正确）
     const newEarnedPinecones = earnedPinecones + 1
@@ -337,35 +338,42 @@ const CheckIn = () => {
           const token = localStorage.getItem('token')
           console.log('登录状态:', { isLoggedIn, token: token ? '存在' : '不存在' })
           
+          // 获取当前的userAnswers（使用ref来确保获取到最新值）
+          const currentUserAnswers = userAnswersRef.current
+          console.log('当前userAnswers:', {
+            length: currentUserAnswers.length,
+            answers: currentUserAnswers
+          })
+          
           // 一次性提交所有答案到后端
           try {
             console.log('提交答案到后端:', {
               checkinId: checkinId,
-              userAnswers: userAnswersRef.current,
-              answerCount: userAnswersRef.current.length,
+              userAnswers: currentUserAnswers,
+              answerCount: currentUserAnswers.length,
               isLoggedIn: isLoggedIn
             })
             
             // 无论是否登录，先更新本地松果数量
-            if (earnedPinecones > 0) {
+            if (newEarnedPinecones > 0) {
               const currentPinecones = parseInt(localStorage.getItem('totalPinecones') || '0')
-              const newPinecones = currentPinecones + earnedPinecones
+              const newPinecones = currentPinecones + newEarnedPinecones
               localStorage.setItem('totalPinecones', newPinecones.toString())
-              console.log('本地更新松果数量:', { current: currentPinecones, earned: earnedPinecones, new: newPinecones })
+              console.log('本地更新松果数量:', { current: currentPinecones, earned: newEarnedPinecones, new: newPinecones })
             }
             
             // 尝试同步到后端
-            if (isLoggedIn && token && checkinId && userAnswersRef.current.length > 0) {
+            if (isLoggedIn && token && checkinId && currentUserAnswers.length > 0) {
               try {
-                const response = await exerciseApi.submitAnswers(checkinId, userAnswersRef.current)
+                console.log('调用exerciseApi.submitAnswers...')
+                const response = await exerciseApi.submitAnswers(checkinId, currentUserAnswers)
                 console.log('后端同步成功:', response)
                 
-                // 如果后端返回了不同的松果数量，使用后端的数据
+                // 无论后端返回什么，都使用后端计算的松果数量
                 if (response.pinecone_earned) {
-                  const currentPinecones = parseInt(localStorage.getItem('totalPinecones') || '0')
-                  const backendPinecones = currentPinecones - earnedPinecones + response.pinecone_earned
+                  const backendPinecones = response.pinecone_earned
                   localStorage.setItem('totalPinecones', backendPinecones.toString())
-                  console.log('后端数据优先更新松果数量:', { current: currentPinecones, backend: response.pinecone_earned, new: backendPinecones })
+                  console.log('使用后端计算的松果数量:', backendPinecones)
                 }
               } catch (apiError) {
                 console.error('后端API调用失败:', apiError)
@@ -377,27 +385,37 @@ const CheckIn = () => {
                 isLoggedIn: isLoggedIn,
                 hasToken: !!token,
                 hasCheckinId: !!checkinId,
-                hasAnswers: userAnswersRef.current.length > 0
+                hasAnswers: currentUserAnswers.length > 0
               })
             }
           } catch (error) {
             console.error('同步松果数据失败:', error)
             // 同步失败时，确保本地松果数量已更新
-            if (earnedPinecones > 0) {
+            if (newEarnedPinecones > 0) {
               const currentPinecones = parseInt(localStorage.getItem('totalPinecones') || '0')
-              const newPinecones = currentPinecones + earnedPinecones
+              const newPinecones = currentPinecones + newEarnedPinecones
               localStorage.setItem('totalPinecones', newPinecones.toString())
-              console.log('同步失败，使用本地数据更新松果数量:', { current: currentPinecones, earned: earnedPinecones, new: newPinecones })
+              console.log('同步失败，使用本地数据更新松果数量:', { current: currentPinecones, earned: newEarnedPinecones, new: newPinecones })
             }
           }
           
-          // 尝试从后端同步最新的松果数量
+          // 尝试从后端同步最新的用户状态，解决前后端计数不匹配问题
           try {
             if (isLoggedIn && token) {
-              const pineconeResponse = await pineconeApi.getTotal()
-              console.log('最新松果数量:', pineconeResponse)
-              if (pineconeResponse.pinecone_count) {
-                localStorage.setItem('totalPinecones', pineconeResponse.pinecone_count.toString())
+              console.log('调用userApi.getStatus...')
+              const statusResponse = await userApi.getStatus()
+              console.log('最新用户状态:', statusResponse)
+              if (statusResponse.pinecone_count) {
+                const backendPinecones = statusResponse.pinecone_count
+                const currentLocalPinecones = parseInt(localStorage.getItem('totalPinecones') || '0')
+                
+                // 优先使用后端数据，但如果后端数据为0且本地有数据，则保持本地数据
+                if (backendPinecones > 0 || currentLocalPinecones === 0) {
+                  localStorage.setItem('totalPinecones', backendPinecones.toString())
+                  console.log('使用后端松果数量数据:', backendPinecones)
+                } else {
+                  console.log('后端松果数量为0，保持本地数据不变:', currentLocalPinecones)
+                }
               }
             }
           } catch (error) {

@@ -474,6 +474,22 @@ const Profile = () => {
                 transition: 'all 0.3s ease',
                 animation: 'breathing 4s ease-in-out infinite 1s'
               }}>
+                <div style={{ fontSize: '2rem', marginBottom: '10px' }}>🥧</div>
+                <div style={{ fontSize: '1.3rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>
+                  {parseInt(localStorage.getItem('totalPinecones') || '0')}
+                </div>
+                <div style={{ color: 'var(--text-color)', fontSize: '14px' }}>松果数量</div>
+              </div>
+              <div style={{ 
+                backgroundColor: 'var(--light-color)', 
+                padding: '20px', 
+                borderRadius: '15px', 
+                minWidth: '130px', 
+                textAlign: 'center', 
+                boxShadow: 'var(--shadow)',
+                transition: 'all 0.3s ease',
+                animation: 'breathing 4s ease-in-out infinite 1.5s'
+              }}>
                 <div style={{ fontSize: '2rem', marginBottom: '10px' }}>💰</div>
                 <div style={{ fontSize: '1.3rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>
                   {bankInfo.pinecone_coins}
@@ -488,7 +504,7 @@ const Profile = () => {
                 textAlign: 'center', 
                 boxShadow: 'var(--shadow)',
                 transition: 'all 0.3s ease',
-                animation: 'breathing 4s ease-in-out infinite 1.5s'
+                animation: 'breathing 4s ease-in-out infinite 2s'
               }}>
                 <div style={{ fontSize: '2rem', marginBottom: '10px' }}>🌲</div>
                 <div style={{ fontSize: '1.3rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>
