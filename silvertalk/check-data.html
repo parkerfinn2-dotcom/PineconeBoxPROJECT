@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>检查数据</title>
+</head>
+<body>
+    <h1>分类句子数量检查</h1>
+    <div id="result"></div>
+    
+    <script src="data.js"></script>
+    <script>
+        const result = document.getElementById('result');
+        let html = '<h2>每个分类的句子数量：</h2>';
+        
+        Object.keys(data).forEach(key => {
+            html += `<p>${key}: ${data[key].length} 句</p>`;
+        });
+        
+        result.innerHTML = html;
+    </script>
+</body>
+</html>
