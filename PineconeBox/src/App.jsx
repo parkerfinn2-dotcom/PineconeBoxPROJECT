@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, memo, useMemo } from 'react'
 
 // 使用React.lazy实现代码分割
 const Home = lazy(() => import('./pages/Home'))
@@ -49,12 +49,26 @@ const Loading = () => {
   )
 }
 
-// 路由守卫组件
-const ProtectedRoute = ({ children, requireRegistration = true }) => {
+// 路由守卫组件 - 使用 memo 优化，避免不必要的重新渲染
+const ProtectedRoute = memo(({ children, requireRegistration = true }) => {
   const location = useLocation()
-  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true'
-  const isRegistered = localStorage.getItem('isRegistered') === 'true'
-  const token = localStorage.getItem('token')
+  
+  // 使用 useMemo 缓存状态检查结果，避免每次渲染都重新计算
+  const authState = useMemo(() => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true'
+    const isRegistered = localStorage.getItem('isRegistered') === 'true'
+    const token = localStorage.getItem('token')
+    const currentPath = location.pathname
+    
+    return {
+      isLoggedIn,
+      isRegistered,
+      token,
+      currentPath
+    }
+  }, [location.pathname]) // 只在路径变化时重新计算
+  
+  const { isLoggedIn, isRegistered, token, currentPath } = authState
   
   // 检查登录状态和token
   if (!isLoggedIn || !token) {
@@ -62,12 +76,12 @@ const ProtectedRoute = ({ children, requireRegistration = true }) => {
   }
   
   // 检查注册状态，但不保护注册页面本身
-  if (requireRegistration && !isRegistered && location.pathname !== '/register') {
+  if (requireRegistration && !isRegistered && currentPath !== '/register') {
     return <Navigate to="/register" replace />
   }
   
   return children
-}
+})
 
 function App() {
   return (
