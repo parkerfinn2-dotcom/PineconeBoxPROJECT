@@ -294,7 +294,19 @@ const wordLibraryIntegrated = [
 
 // 根据级别获取单词
 export const getWordsByLevel = (level, count = 10) => {
-  const levelWords = wordLibraryIntegrated.filter(word => word.level === level);
+  let levelWords = wordLibraryIntegrated.filter(word => word.level === level);
+  
+  // 如果当前等级单词不足，从低一级补充
+  if (levelWords.length < count && level > 1) {
+    const lowerLevelWords = wordLibraryIntegrated.filter(word => word.level === level - 1);
+    levelWords = [...levelWords, ...lowerLevelWords];
+  }
+  
+  // 如果还是不足，允许重复（循环使用）
+  while (levelWords.length < count) {
+    levelWords = [...levelWords, ...levelWords];
+  }
+  
   // 随机选择指定数量的单词
   const shuffled = [...levelWords].sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);

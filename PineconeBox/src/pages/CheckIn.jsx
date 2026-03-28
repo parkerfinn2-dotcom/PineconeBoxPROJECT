@@ -280,13 +280,42 @@ const CheckIn = () => {
     // 保存答案到数组
     const newUserAnswer = {
       word_id: currentQuizWord.id,
-      answer: userAnswer
+      answer: userAnswer,
+      is_correct: isCorrect
     }
     setUserAnswers(prev => [...prev, newUserAnswer])
     
     // 每打卡一个单词，获得一个松果（不管回答是否正确）
     const newEarnedPinecones = earnedPinecones + 1
     setEarnedPinecones(newEarnedPinecones)
+    
+    // 如果回答正确，记录该单词到累积单词列表
+    if (isCorrect) {
+      // 获取当前累积单词列表
+      const learnedWords = JSON.parse(localStorage.getItem('learnedWords') || '[]')
+      
+      // 检查单词是否已经在列表中
+      const wordExists = learnedWords.some(word => word.id === currentQuizWord.id)
+      
+      if (!wordExists) {
+        // 添加新单词到列表
+        learnedWords.push({
+          id: currentQuizWord.id,
+          word: currentQuizWord.word,
+          meaning: currentQuizWord.meaning,
+          learned_at: new Date().toISOString()
+        })
+        
+        // 保存更新后的列表
+        localStorage.setItem('learnedWords', JSON.stringify(learnedWords))
+        
+        // 更新累积单词数
+        const currentTotalWords = parseInt(localStorage.getItem('totalWords') || '0')
+        const newTotalWords = currentTotalWords + 1
+        localStorage.setItem('totalWords', newTotalWords.toString())
+        console.log('新增单词:', currentQuizWord.word, '累计单词数:', newTotalWords)
+      }
+    }
     
     // 显示松果奖励动画
     createPineconeReward()

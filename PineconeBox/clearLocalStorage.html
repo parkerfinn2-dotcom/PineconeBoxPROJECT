@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>清除本地存储</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #status {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>清除本地存储</h1>
+    <button onclick="clearAllStorage()">清除所有本地存储数据</button>
+    <button onclick="clearUsersStorage()">只清除用户数据</button>
+    <button onclick="showStorage()">查看当前存储数据</button>
+    <div id="status"></div>
+
+    <script>
+        function clearAllStorage() {
+            localStorage.clear();
+            document.getElementById('status').innerHTML = '<p style="color: green;">所有本地存储数据已清除！</p>';
+        }
+
+        function clearUsersStorage() {
+            localStorage.removeItem('users');
+            document.getElementById('status').innerHTML = '<p style="color: green;">用户数据已清除！</p>';
+        }
+
+        function showStorage() {
+            let status = '<h3>当前存储数据：</h3>';
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                let value = localStorage.getItem(key);
+                // 限制显示长度
+                if (value.length > 200) {
+                    value = value.substring(0, 200) + '...';
+                }
+                status += `<p><strong>${key}:</strong> ${value}</p>`;
+            }
+            if (localStorage.length === 0) {
+                status += '<p>本地存储为空</p>';
+            }
+            document.getElementById('status').innerHTML = status;
+        }
+    </script>
+</body>
+</html>

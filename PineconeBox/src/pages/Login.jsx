@@ -89,6 +89,7 @@ const Login = () => {
       // 登录成功，保存token和用户信息
       localStorage.setItem('token', response.token)
       localStorage.setItem('isLoggedIn', 'true')
+      localStorage.setItem('isRegistered', 'true')
       localStorage.setItem('username', response.username)
       localStorage.setItem('user_id', response.user_id)
       localStorage.setItem('pinecone_count', response.pinecone_count)
@@ -280,39 +281,42 @@ const Login = () => {
           还没有账号？ <Link to="/register" style={{ color: 'var(--primary-color)', textDecoration: 'none', fontWeight: 'bold' }}>注册</Link>
         </div>
         
-        {/* 测试用户登录按钮 */}
-        <div style={{ marginTop: '20px' }}>
-          <button 
-            onClick={() => {
+        {/* 测试用户登录按钮 - 仅在开发环境显示 */}
+        {import.meta.env.DEV && (
+          <div style={{ marginTop: '20px' }}>
+            <button 
+              onClick={() => {
               setUsername('testuser');
               setPassword('password123');
               // 模拟登录成功
               localStorage.setItem('token', 'test_token_123');
               localStorage.setItem('isLoggedIn', 'true');
+              localStorage.setItem('isRegistered', 'true');
               localStorage.setItem('username', 'testuser');
               localStorage.setItem('user_id', '1');
               localStorage.setItem('pinecone_count', '0');
               navigate('/home');
             }}
-            style={{
-              width: '100%',
-              padding: '12px',
-              backgroundColor: 'rgba(76, 175, 80, 0.1)',
-              color: 'var(--primary-color)',
-              border: '2px solid var(--primary-color)',
-              borderRadius: '15px',
-              fontSize: '16px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            🧪 测试用户登录
-          </button>
-          <div style={{ marginTop: '10px', fontSize: '12px', color: 'var(--text-color)', textAlign: 'center' }}>
-            自动填充测试账号：testuser / password123
+              style={{
+                width: '100%',
+                padding: '12px',
+                backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                color: 'var(--primary-color)',
+                border: '2px solid var(--primary-color)',
+                borderRadius: '15px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              🧪 测试用户登录
+            </button>
+            <div style={{ marginTop: '10px', fontSize: '12px', color: 'var(--text-color)', textAlign: 'center' }}>
+              自动填充测试账号：testuser / password123
+            </div>
           </div>
-        </div>
+        )}
         
         {/* 登录方式切换 */}
         <div style={{ marginTop: '20px' }}>

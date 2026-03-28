@@ -14,54 +14,26 @@ const Square = () => {
     navigate('/login')
   }
   
-  // 模拟广场动态数据
-  const [activities, setActivities] = useState([
-    {
-      id: 1,
-      username: '小明',
-      avatar: '👦',
-      content: '今天完成了难度2的单词打卡！继续加油！',
-      time: '10分钟前',
-      likes: 12,
-      isLiked: false
-    },
-    {
-      id: 2,
-      username: '小红',
-      avatar: '👧',
-      content: '连续打卡14天，获得了"坚持达人"成就！',
-      time: '1小时前',
-      likes: 25,
-      isLiked: true
-    },
-    {
-      id: 3,
-      username: '小华',
-      avatar: '👦',
-      content: '学习了5个新单词，感觉收获满满！',
-      time: '2小时前',
-      likes: 8,
-      isLiked: false
-    },
-    {
-      id: 4,
-      username: '小丽',
-      avatar: '👧',
-      content: '难度3的单词有点挑战，但是我做到了！',
-      time: '3小时前',
-      likes: 18,
-      isLiked: false
-    },
-    {
-      id: 5,
-      username: '小强',
-      avatar: '👦',
-      content: '今天学会了"butterfly"这个单词，好有趣！',
-      time: '5小时前',
-      likes: 15,
-      isLiked: true
+  // 真实用户动态数据
+  const [activities, setActivities] = useState([])
+
+  // 从本地存储获取真实用户动态
+  useEffect(() => {
+    const loadActivities = () => {
+      // 从本地存储获取动态数据
+      const storedActivities = JSON.parse(localStorage.getItem('activities') || '[]')
+      setActivities(storedActivities)
     }
-  ])
+    
+    loadActivities()
+    
+    // 监听本地存储变化，实时更新动态
+    window.addEventListener('storage', loadActivities)
+    
+    return () => {
+      window.removeEventListener('storage', loadActivities)
+    }
+  }, [])
 
   // 商店商品数据
   const [shopItems, setShopItems] = useState([
@@ -232,45 +204,101 @@ const Square = () => {
   // 选中的好友
   const [selectedFriend, setSelectedFriend] = useState(null)
 
-  // 排行榜数据
+  // 排行榜数据 - 初始为空，只显示真实用户数据
   const [leaderboards, setLeaderboards] = useState({
-    pinecones: [
-      { rank: 1, name: '松果王者', avatar: '👑', score: 1200, badge: '💎' },
-      { rank: 2, name: '松果大师', avatar: '🧙‍♂️', score: 950, badge: '🥇' },
-      { rank: 3, name: '松果达人', avatar: '🌟', score: 780, badge: '🥈' },
-      { rank: 4, name: '松果爱好者', avatar: '🥧', score: 520, badge: '🥉' },
-      { rank: 5, name: '小明', avatar: '👦', score: 380, badge: '✨' },
-      { rank: 6, name: '小红', avatar: '👧', score: 320, badge: '✨' },
-      { rank: 7, name: '小华', avatar: '👦', score: 280, badge: '✨' },
-      { rank: 8, name: '小丽', avatar: '👧', score: 250, badge: '✨' },
-      { rank: 9, name: '小强', avatar: '👦', score: 220, badge: '✨' },
-      { rank: 10, name: '松果新手', avatar: '🌱', score: 150, badge: '✨' }
-    ],
-    streak: [
-      { rank: 1, name: '坚持王者', avatar: '🏆', score: 365, badge: '💎' },
-      { rank: 2, name: '坚持大师', avatar: '🔥', score: 180, badge: '🥇' },
-      { rank: 3, name: '坚持达人', avatar: '🌟', score: 90, badge: '🥈' },
-      { rank: 4, name: '坚持爱好者', avatar: '💪', score: 60, badge: '🥉' },
-      { rank: 5, name: '小红', avatar: '👧', score: 14, badge: '✨' },
-      { rank: 6, name: '小明', avatar: '👦', score: 7, badge: '✨' },
-      { rank: 7, name: '小华', avatar: '👦', score: 5, badge: '✨' },
-      { rank: 8, name: '小丽', avatar: '👧', score: 3, badge: '✨' },
-      { rank: 9, name: '小强', avatar: '👦', score: 2, badge: '✨' },
-      { rank: 10, name: '坚持新手', avatar: '🌱', score: 1, badge: '✨' }
-    ],
-    words: [
-      { rank: 1, name: '词汇王者', avatar: '📚', score: 500, badge: '💎' },
-      { rank: 2, name: '词汇大师', avatar: '🧠', score: 400, badge: '🥇' },
-      { rank: 3, name: '词汇达人', avatar: '💡', score: 300, badge: '🥈' },
-      { rank: 4, name: '词汇爱好者', avatar: '📝', score: 200, badge: '🥉' },
-      { rank: 5, name: '小明', avatar: '👦', score: 120, badge: '✨' },
-      { rank: 6, name: '小红', avatar: '👧', score: 100, badge: '✨' },
-      { rank: 7, name: '小华', avatar: '👦', score: 80, badge: '✨' },
-      { rank: 8, name: '小丽', avatar: '👧', score: 60, badge: '✨' },
-      { rank: 9, name: '小强', avatar: '👦', score: 50, badge: '✨' },
-      { rank: 10, name: '词汇新手', avatar: '🌱', score: 20, badge: '✨' }
-    ]
+    pinecones: [],
+    streak: [],
+    words: []
   })
+
+  // 从本地存储获取真实用户排名数据
+  useEffect(() => {
+    // 这里可以从本地存储或API获取真实用户数据
+    // 目前我们先实现一个简单的逻辑，从本地存储中获取用户数据并生成排名
+    const updateLeaderboards = () => {
+      // 获取所有用户数据（这里简化处理，实际项目中可能需要从服务器获取）
+      const users = JSON.parse(localStorage.getItem('users') || '[]')
+      
+      // 添加当前登录用户到用户列表
+      const currentUsername = localStorage.getItem('username')
+      if (currentUsername) {
+        const currentUser = {
+          name: currentUsername,
+          pinecones: parseInt(localStorage.getItem('totalPinecones') || '0'),
+          streak: parseInt(localStorage.getItem('streakDays') || '0'),
+          words: parseInt(localStorage.getItem('totalWords') || '0'),
+          avatar: '👤'
+        }
+        
+        // 检查用户是否已存在，不存在则添加
+        const userExists = users.some(user => user.name === currentUsername)
+        if (!userExists) {
+          users.push(currentUser)
+          localStorage.setItem('users', JSON.stringify(users))
+        } else {
+          // 更新现有用户数据
+          const updatedUsers = users.map(user => 
+            user.name === currentUsername ? currentUser : user
+          )
+          localStorage.setItem('users', JSON.stringify(updatedUsers))
+        }
+      }
+      
+      // 生成松果数量排行榜
+      const pineconesLeaderboard = users
+        .sort((a, b) => b.pinecones - a.pinecones)
+        .slice(0, 10)
+        .map((user, index) => ({
+          rank: index + 1,
+          name: user.name,
+          avatar: user.avatar || '👤',
+          score: user.pinecones,
+          badge: index < 3 ? (index === 0 ? '💎' : index === 1 ? '🥇' : '🥈') : '✨'
+        }))
+      
+      // 生成连续签到排行榜
+      const streakLeaderboard = users
+        .sort((a, b) => b.streak - a.streak)
+        .slice(0, 10)
+        .map((user, index) => ({
+          rank: index + 1,
+          name: user.name,
+          avatar: user.avatar || '👤',
+          score: user.streak,
+          badge: index < 3 ? (index === 0 ? '💎' : index === 1 ? '🥇' : '🥈') : '✨'
+        }))
+      
+      // 生成单词数量排行榜
+      const wordsLeaderboard = users
+        .sort((a, b) => b.words - a.words)
+        .slice(0, 10)
+        .map((user, index) => ({
+          rank: index + 1,
+          name: user.name,
+          avatar: user.avatar || '👤',
+          score: user.words,
+          badge: index < 3 ? (index === 0 ? '💎' : index === 1 ? '🥇' : '🥈') : '✨'
+        }))
+      
+      // 更新排行榜数据
+      setLeaderboards({
+        pinecones: pineconesLeaderboard,
+        streak: streakLeaderboard,
+        words: wordsLeaderboard
+      })
+    }
+    
+    // 初始加载时更新排行榜
+    updateLeaderboards()
+    
+    // 监听本地存储变化，实时更新排行榜
+    window.addEventListener('storage', updateLeaderboards)
+    
+    // 清理监听器
+    return () => {
+      window.removeEventListener('storage', updateLeaderboards)
+    }
+  }, [])
 
   // 当前选中的排行榜类型
   const [selectedLeaderboard, setSelectedLeaderboard] = useState('pinecones')
@@ -299,23 +327,141 @@ const Square = () => {
     }))
   }
 
-  // 购买商品
-  const handlePurchase = (item) => {
-    if (userBalance.pinecones < item.price) {
+  // 松果兑换松果币
+  const exchangePinecones = (pinecones, coins) => {
+    if (userBalance.pinecones < pinecones) {
       // 显示松果不足的动画
       showPineconeInsufficientAnimation()
+      return
+    }
+
+    // 显示兑换动画
+    const notification = document.createElement('div')
+    notification.innerHTML = `
+      <div style="
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #4CAF50, #45a049);
+        color: white;
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(76, 175, 80, 0.4);
+        text-align: center;
+        z-index: 1000;
+        animation: bounceIn 0.5s ease-out forwards;
+        font-family: Arial, sans-serif;
+      ">
+        <div style="font-size: 3rem; margin-bottom: 20px; animation: spin 2s linear infinite;">🔄</div>
+        <h3 style="font-size: 1.5rem; margin-bottom: 15px;">兑换成功！</h3>
+        <p style="font-size: 1.2rem; margin-bottom: 20px;">${pinecones}松果 → ${coins}松果币</p>
+      </div>
+      <style>
+        @keyframes bounceIn {
+          0% {
+            transform: translate(-50%, -50%) scale(0.3);
+            opacity: 0;
+          }
+          50% {
+            transform: translate(-50%, -50%) scale(1.1);
+            opacity: 1;
+          }
+          100% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+          }
+        }
+        @keyframes spin {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+      </style>
+    `
+    document.body.appendChild(notification)
+
+    // 扣除松果，增加松果币
+    const newPinecones = userBalance.pinecones - pinecones
+    const newCoins = userBalance.pineconeCoins + coins
+    
+    localStorage.setItem('totalPinecones', newPinecones.toString())
+    localStorage.setItem('pineconeCoins', newCoins.toString())
+    
+    setUserBalance({
+      pinecones: newPinecones,
+      pineconeCoins: newCoins
+    })
+
+    // 3秒后移除动画
+    setTimeout(() => {
+      notification.remove()
+    }, 3000)
+  }
+
+  // 购买商品
+  const handlePurchase = (item) => {
+    // 计算松果币价格（1松果币 = 10松果）
+    const coinPrice = Math.ceil(item.price / 10)
+    
+    // 只使用松果币购买
+    if (userBalance.pineconeCoins < coinPrice) {
+      // 显示松果币不足的动画
+      const notification = document.createElement('div')
+      notification.innerHTML = `
+        <div style="
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: linear-gradient(135deg, #F44336, #FF5722);
+          color: white;
+          padding: 30px;
+          border-radius: 20px;
+          box-shadow: 0 10px 40px rgba(244, 67, 54, 0.4);
+          text-align: center;
+          z-index: 1000;
+          animation: bounceIn 0.5s ease-out forwards;
+          font-family: Arial, sans-serif;
+        ">
+          <div style="font-size: 3rem; margin-bottom: 20px;">💰</div>
+          <h3 style="font-size: 1.5rem; margin-bottom: 10px;">松果币数量不足！</h3>
+          <p style="font-size: 1rem;">请先兑换一些松果币。</p>
+        </div>
+        <style>
+          @keyframes bounceIn {
+            0% {
+              transform: translate(-50%, -50%) scale(0.3);
+              opacity: 0;
+            }
+            50% {
+              transform: translate(-50%, -50%) scale(1.1);
+              opacity: 1;
+            }
+            100% {
+              transform: translate(-50%, -50%) scale(1);
+              opacity: 1;
+            }
+          }
+        </style>
+      `
+      document.body.appendChild(notification)
+      setTimeout(() => notification.remove(), 3000)
       return
     }
 
     // 显示购买中动画
     showPurchaseAnimation(item)
 
-    // 扣除松果
-    const newBalance = userBalance.pinecones - item.price
-    localStorage.setItem('totalPinecones', newBalance.toString())
+    // 扣除松果币
+    const newCoins = userBalance.pineconeCoins - coinPrice
+    localStorage.setItem('pineconeCoins', newCoins.toString())
     setUserBalance(prev => ({
       ...prev,
-      pinecones: newBalance
+      pineconeCoins: newCoins
     }))
 
     // 处理购买逻辑
@@ -776,20 +922,87 @@ const Square = () => {
         {activeTab === 'shop' && (
           <div style={{
             display: 'flex',
-            justifyContent: 'space-around',
+            flexDirection: 'column',
+            gap: '20px',
             marginBottom: '30px',
             padding: '20px',
             backgroundColor: 'var(--card-bg)',
             borderRadius: '20px',
             boxShadow: 'var(--shadow)'
           }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-color)', marginBottom: '5px' }}>松果余额</div>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#FF9800' }}>🌰 {userBalance.pinecones}</div>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-around',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-color)', marginBottom: '5px' }}>松果余额</div>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#FF9800' }}>🌰 {userBalance.pinecones}</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-color)', marginBottom: '5px' }}>松果币余额</div>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#4CAF50' }}>💰 {userBalance.pineconeCoins}</div>
+              </div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-color)', marginBottom: '5px' }}>松果币余额</div>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#4CAF50' }}>💰 {userBalance.pineconeCoins}</div>
+            
+            {/* 松果兑换松果币功能 */}
+            <div style={{
+              padding: '15px',
+              backgroundColor: 'var(--light-color)',
+              borderRadius: '15px',
+              textAlign: 'center'
+            }}>
+              <h4 style={{ color: 'var(--primary-color)', marginBottom: '15px' }}>🔄 松果兑换</h4>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => exchangePinecones(10, 1)}
+                  disabled={userBalance.pinecones < 10}
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: '15px',
+                    border: '2px solid var(--primary-color)',
+                    backgroundColor: userBalance.pinecones >= 10 ? 'var(--primary-color)' : 'var(--light-color)',
+                    color: userBalance.pinecones >= 10 ? 'white' : 'var(--text-color)',
+                    fontWeight: 'bold',
+                    cursor: userBalance.pinecones >= 10 ? 'pointer' : 'not-allowed',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  10松果 → 1松果币
+                </button>
+                <button
+                  onClick={() => exchangePinecones(50, 5)}
+                  disabled={userBalance.pinecones < 50}
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: '15px',
+                    border: '2px solid var(--primary-color)',
+                    backgroundColor: userBalance.pinecones >= 50 ? 'var(--primary-color)' : 'var(--light-color)',
+                    color: userBalance.pinecones >= 50 ? 'white' : 'var(--text-color)',
+                    fontWeight: 'bold',
+                    cursor: userBalance.pinecones >= 50 ? 'pointer' : 'not-allowed',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  50松果 → 5松果币
+                </button>
+                <button
+                  onClick={() => exchangePinecones(100, 10)}
+                  disabled={userBalance.pinecones < 100}
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: '15px',
+                    border: '2px solid var(--primary-color)',
+                    backgroundColor: userBalance.pinecones >= 100 ? 'var(--primary-color)' : 'var(--light-color)',
+                    color: userBalance.pinecones >= 100 ? 'white' : 'var(--text-color)',
+                    fontWeight: 'bold',
+                    cursor: userBalance.pinecones >= 100 ? 'pointer' : 'not-allowed',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  100松果 → 10松果币
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1052,7 +1265,11 @@ const Square = () => {
                     
                     {/* 商品价格 */}
                     <div style={{ marginBottom: '20px', position: 'relative', zIndex: 1 }}>
-                      <span style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#FF9800' }}>🌰 {item.price}</span>
+                      <span style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#4CAF50' }}>💰 {Math.ceil(item.price / 10)}</span>
+                    </div>
+                    {/* 原始松果价格 */}
+                    <div style={{ marginBottom: '10px', position: 'relative', zIndex: 1, fontSize: '0.9rem', color: 'var(--text-color)', textDecoration: 'line-through' }}>
+                      原价: 🌰 {item.price}
                     </div>
                     
                     {/* 商品库存 */}
@@ -1299,6 +1516,37 @@ const Square = () => {
                     </div>
                   </div>
                 ))}
+                
+                {/* 空状态 */}
+                {leaderboards[selectedLeaderboard].length === 0 && (
+                  <div style={{ 
+                    textAlign: 'center', 
+                    padding: '60px 20px', 
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: '20px',
+                    border: '2px dashed var(--light-color)'
+                  }}>
+                    <div style={{ fontSize: '5rem', marginBottom: '20px' }}>🏆</div>
+                    <h3 style={{ color: 'var(--primary-color)', marginBottom: '10px', fontSize: '1.5rem' }}>暂无排名数据</h3>
+                    <p style={{ color: 'var(--text-color)', marginBottom: '30px' }}>成为第一个登上排行榜的用户吧！</p>
+                    <button 
+                      style={{
+                        padding: '12px 24px',
+                        borderRadius: '20px',
+                        border: '2px solid var(--primary-color)',
+                        backgroundColor: 'var(--primary-color)',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        fontSize: '1rem'
+                      }}
+                      onClick={() => navigate('/checkin')}
+                    >
+                      去打卡提升排名
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 

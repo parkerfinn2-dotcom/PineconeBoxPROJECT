@@ -50,11 +50,22 @@ const Loading = () => {
 }
 
 // 路由守卫组件
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, requireRegistration = true }) => {
   const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true'
+  const isRegistered = localStorage.getItem('isRegistered') === 'true'
   const token = localStorage.getItem('token')
-  // 同时检查登录状态和token
-  return (isLoggedIn && token) ? children : <Navigate to="/login" replace />
+  
+  // 检查登录状态和token
+  if (!isLoggedIn || !token) {
+    return <Navigate to="/login" replace />
+  }
+  
+  // 检查注册状态
+  if (requireRegistration && !isRegistered) {
+    return <Navigate to="/register" replace />
+  }
+  
+  return children
 }
 
 function App() {

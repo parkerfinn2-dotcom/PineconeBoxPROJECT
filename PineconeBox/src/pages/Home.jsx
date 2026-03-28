@@ -464,31 +464,35 @@ const Home = () => {
                 ) : '登录'}
               </button>
               
-              {/* 测试用户登录 */}
-              <button 
-                onClick={() => {
-                  setLoginUsername('testuser');
-                  setLoginPassword('password123');
-                }}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                  color: 'var(--primary-color)',
-                  border: '2px solid var(--primary-color)',
-                  borderRadius: '15px',
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-                disabled={isLoginLoading}
-              >
-                🧪 测试用户登录
-              </button>
-              <div style={{ marginTop: '10px', fontSize: '12px', color: 'var(--text-color)', textAlign: 'center' }}>
-                自动填充测试账号：testuser / password123
-              </div>
+              {/* 测试用户登录 - 仅在开发环境显示 */}
+              {import.meta.env.DEV && (
+                <>
+                  <button 
+                    onClick={() => {
+                      setLoginUsername('testuser');
+                      setLoginPassword('password123');
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                      color: 'var(--primary-color)',
+                      border: '2px solid var(--primary-color)',
+                      borderRadius: '15px',
+                      fontSize: '16px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }}
+                    disabled={isLoginLoading}
+                  >
+                    🧪 测试用户登录
+                  </button>
+                  <div style={{ marginTop: '10px', fontSize: '12px', color: 'var(--text-color)', textAlign: 'center' }}>
+                    自动填充测试账号：testuser / password123
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
