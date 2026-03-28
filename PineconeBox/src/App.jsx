@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 
 // 使用React.lazy实现代码分割
@@ -51,6 +51,7 @@ const Loading = () => {
 
 // 路由守卫组件
 const ProtectedRoute = ({ children, requireRegistration = true }) => {
+  const location = useLocation()
   const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true'
   const isRegistered = localStorage.getItem('isRegistered') === 'true'
   const token = localStorage.getItem('token')
@@ -60,8 +61,8 @@ const ProtectedRoute = ({ children, requireRegistration = true }) => {
     return <Navigate to="/login" replace />
   }
   
-  // 检查注册状态
-  if (requireRegistration && !isRegistered) {
+  // 检查注册状态，但不保护注册页面本身
+  if (requireRegistration && !isRegistered && location.pathname !== '/register') {
     return <Navigate to="/register" replace />
   }
   
